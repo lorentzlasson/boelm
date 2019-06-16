@@ -48,15 +48,26 @@ getCoord grid a =
 
 neighbourOffsets : List ( Int, Int )
 neighbourOffsets =
-    [ ( -1, -1 )
-    , ( 0, -1 )
-    , ( 1, -1 )
-    , ( 1, 0 )
-    , ( 1, 1 )
-    , ( 0, 1 )
-    , ( -1, 1 )
-    , ( -1, 0 )
-    ]
+    let
+        coordIncrements =
+            [ -1, 0, 1 ]
+
+        centerCoord =
+            ( 0, 0 )
+    in
+    cartesianPairs coordIncrements
+        |> List.Extra.remove centerCoord
+
+
+cartesianPairs : List a -> List ( a, a )
+cartesianPairs possibilities =
+    List.concatMap
+        (\x1 ->
+            List.map
+                (\x2 -> ( x1, x2 ))
+                possibilities
+        )
+        possibilities
 
 
 addCoords : Coord -> Coord -> Coord
