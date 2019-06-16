@@ -5368,6 +5368,71 @@ var author$project$Grid$getElem = F2(
 			elm_community$list_extra$List$Extra$getAt(x),
 			A2(elm_community$list_extra$List$Extra$getAt, y, grid));
 	});
+var author$project$Grid$addCoords = F2(
+	function (_n0, _n1) {
+		var x1 = _n0.a;
+		var y1 = _n0.b;
+		var x2 = _n1.a;
+		var y2 = _n1.b;
+		return _Utils_Tuple2(x1 + x2, y1 + y2);
+	});
+var elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
+		}
+	});
+var elm$core$List$concat = function (lists) {
+	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
+};
+var elm$core$List$concatMap = F2(
+	function (f, list) {
+		return elm$core$List$concat(
+			A2(elm$core$List$map, f, list));
+	});
+var author$project$Grid$cartesianPairs = function (possibilities) {
+	return A2(
+		elm$core$List$concatMap,
+		function (x1) {
+			return A2(
+				elm$core$List$map,
+				function (x2) {
+					return _Utils_Tuple2(x1, x2);
+				},
+				possibilities);
+		},
+		possibilities);
+};
+var elm_community$list_extra$List$Extra$remove = F2(
+	function (x, xs) {
+		if (!xs.b) {
+			return _List_Nil;
+		} else {
+			var y = xs.a;
+			var ys = xs.b;
+			return _Utils_eq(x, y) ? ys : A2(
+				elm$core$List$cons,
+				y,
+				A2(elm_community$list_extra$List$Extra$remove, x, ys));
+		}
+	});
+var author$project$Grid$neighbourOffsets = function () {
+	var coordIncrements = _List_fromArray(
+		[-1, 0, 1]);
+	var centerCoord = _Utils_Tuple2(0, 0);
+	return A2(
+		elm_community$list_extra$List$Extra$remove,
+		centerCoord,
+		author$project$Grid$cartesianPairs(coordIncrements));
+}();
+var author$project$Grid$getNeighbouringCoords = function (coord) {
+	return A2(
+		elm$core$List$map,
+		author$project$Grid$addCoords(coord),
+		author$project$Grid$neighbourOffsets);
+};
 var elm$core$Maybe$map = F2(
 	function (f, maybe) {
 		if (maybe.$ === 'Just') {
@@ -5546,7 +5611,7 @@ var elm_community$list_extra$List$Extra$setAt = F2(
 			elm$core$Basics$always(value));
 	});
 var author$project$Grid$set = F3(
-	function (_n0, grid, occupant) {
+	function (grid, _n0, occupant) {
 		var x = _n0.a;
 		var y = _n0.b;
 		return A2(
@@ -5565,63 +5630,6 @@ var author$project$Grid$set = F3(
 var author$project$Main$Tile = F3(
 	function (revealed, id, bomb) {
 		return {bomb: bomb, id: id, revealed: revealed};
-	});
-var author$project$Main$initTileGrid = elm$core$List$map(
-	elm$core$List$map(
-		function (_n0) {
-			var id = _n0.a;
-			var bomb = _n0.b;
-			return A3(author$project$Main$Tile, false, id, bomb);
-		}));
-var elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
-var author$project$Main$initGridToModel = A2(elm$core$Basics$composeR, author$project$Main$initTileGrid, author$project$Main$Model);
-var author$project$Main$pairFlipped = F2(
-	function (a, b) {
-		return _Utils_Tuple2(b, a);
-	});
-var author$project$Main$updateTileGrid = F2(
-	function (model, grid) {
-		return _Utils_update(
-			model,
-			{tileGrid: grid});
-	});
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Main$update = F2(
-	function (msg, model) {
-		if (msg.$ === 'Click') {
-			var coord = msg.a;
-			return A2(
-				author$project$Main$pairFlipped,
-				elm$core$Platform$Cmd$none,
-				A2(
-					author$project$Main$updateTileGrid,
-					model,
-					A3(
-						author$project$Grid$set,
-						coord,
-						model.tileGrid,
-						A2(
-							elm$core$Maybe$withDefault,
-							A3(author$project$Main$Tile, false, 'DEFAULT', false),
-							A2(
-								elm$core$Maybe$map,
-								function (s) {
-									return _Utils_update(
-										s,
-										{revealed: true});
-								},
-								A2(author$project$Grid$getElem, model.tileGrid, coord))))));
-		} else {
-			var boolGrid = msg.a;
-			return _Utils_Tuple2(
-				author$project$Main$initGridToModel(boolGrid),
-				elm$core$Platform$Cmd$none);
-		}
 	});
 var elm$core$List$any = F2(
 	function (isOkay, list) {
@@ -5733,43 +5741,11 @@ var author$project$Grid$getCoord = F2(
 			row);
 		return A3(elm$core$Maybe$map2, elm$core$Tuple$pair, x, y);
 	});
-var author$project$Main$Click = function (a) {
-	return {$: 'Click', a: a};
-};
-var author$project$Grid$addCoords = F2(
-	function (_n0, _n1) {
-		var x1 = _n0.a;
-		var y1 = _n0.b;
-		var x2 = _n1.a;
-		var y2 = _n1.b;
-		return _Utils_Tuple2(x1 + x2, y1 + y2);
+var elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
 	});
-var author$project$Grid$neighbourOffsets = _List_fromArray(
-	[
-		_Utils_Tuple2(-1, -1),
-		_Utils_Tuple2(0, -1),
-		_Utils_Tuple2(1, -1),
-		_Utils_Tuple2(1, 0),
-		_Utils_Tuple2(1, 1),
-		_Utils_Tuple2(0, 1),
-		_Utils_Tuple2(-1, 1),
-		_Utils_Tuple2(-1, 0)
-	]);
-var author$project$Grid$getNeighbouringCoords = function (coord) {
-	return A2(
-		elm$core$List$map,
-		author$project$Grid$addCoords(coord),
-		author$project$Grid$neighbourOffsets);
-};
-var elm_community$list_extra$List$Extra$count = function (predicate) {
-	return A2(
-		elm$core$List$foldl,
-		F2(
-			function (x, acc) {
-				return predicate(x) ? (acc + 1) : acc;
-			}),
-		0);
-};
 var elm_community$maybe_extra$Maybe$Extra$foldrValues = F2(
 	function (item, list) {
 		if (item.$ === 'Nothing') {
@@ -5780,7 +5756,7 @@ var elm_community$maybe_extra$Maybe$Extra$foldrValues = F2(
 		}
 	});
 var elm_community$maybe_extra$Maybe$Extra$values = A2(elm$core$List$foldr, elm_community$maybe_extra$Maybe$Extra$foldrValues, _List_Nil);
-var author$project$Main$neighbouringCoordsBombCount = function (grid) {
+var author$project$Main$neighbours = function (grid) {
 	return A2(
 		elm$core$Basics$composeR,
 		author$project$Grid$getNeighbouringCoords,
@@ -5788,21 +5764,105 @@ var author$project$Main$neighbouringCoordsBombCount = function (grid) {
 			elm$core$Basics$composeR,
 			elm$core$List$map(
 				author$project$Grid$getElem(grid)),
-			A2(
-				elm$core$Basics$composeR,
-				elm_community$maybe_extra$Maybe$Extra$values,
-				elm_community$list_extra$List$Extra$count(
-					function ($) {
-						return $.bomb;
-					}))));
+			elm_community$maybe_extra$Maybe$Extra$values));
+};
+var elm_community$list_extra$List$Extra$count = function (predicate) {
+	return A2(
+		elm$core$List$foldl,
+		F2(
+			function (x, acc) {
+				return predicate(x) ? (acc + 1) : acc;
+			}),
+		0);
+};
+var author$project$Main$neighbouringCoordsBombCount = function (grid) {
+	return A2(
+		elm$core$Basics$composeR,
+		author$project$Main$neighbours(grid),
+		elm_community$list_extra$List$Extra$count(
+			function ($) {
+				return $.bomb;
+			}));
 };
 var author$project$Main$neighbouringBombsCount = F2(
 	function (grid, tile) {
 		return A2(
-			elm$core$Maybe$map,
-			author$project$Main$neighbouringCoordsBombCount(grid),
-			A2(author$project$Grid$getCoord, grid, tile));
+			elm$core$Maybe$withDefault,
+			0,
+			A2(
+				elm$core$Maybe$map,
+				author$project$Main$neighbouringCoordsBombCount(grid),
+				A2(author$project$Grid$getCoord, grid, tile)));
 	});
+var author$project$Main$clickTile = F2(
+	function (coord, grid) {
+		var tile = A2(
+			elm$core$Maybe$withDefault,
+			A3(author$project$Main$Tile, true, 'DEFAULT', false),
+			A2(author$project$Grid$getElem, grid, coord));
+		return tile.revealed ? grid : ((!A2(author$project$Main$neighbouringBombsCount, grid, tile)) ? A2(
+			author$project$Main$clickTiles,
+			A3(
+				author$project$Grid$set,
+				grid,
+				coord,
+				_Utils_update(
+					tile,
+					{revealed: true})),
+			author$project$Grid$getNeighbouringCoords(coord)) : A3(
+			author$project$Grid$set,
+			grid,
+			coord,
+			_Utils_update(
+				tile,
+				{revealed: true})));
+	});
+var author$project$Main$clickTiles = F2(
+	function (grid, coords) {
+		return A3(elm$core$List$foldr, author$project$Main$clickTile, grid, coords);
+	});
+var author$project$Main$initTileGrid = elm$core$List$map(
+	elm$core$List$map(
+		function (_n0) {
+			var id = _n0.a;
+			var bomb = _n0.b;
+			return A3(author$project$Main$Tile, false, id, bomb);
+		}));
+var author$project$Main$initGridToModel = A2(elm$core$Basics$composeR, author$project$Main$initTileGrid, author$project$Main$Model);
+var author$project$Main$pairFlipped = F2(
+	function (a, b) {
+		return _Utils_Tuple2(b, a);
+	});
+var author$project$Main$updateTileGrid = F2(
+	function (model, grid) {
+		return _Utils_update(
+			model,
+			{tileGrid: grid});
+	});
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var author$project$Main$update = F2(
+	function (msg, model) {
+		if (msg.$ === 'Click') {
+			var coord = msg.a;
+			var grid = model.tileGrid;
+			return A2(
+				author$project$Main$pairFlipped,
+				elm$core$Platform$Cmd$none,
+				A2(
+					author$project$Main$updateTileGrid,
+					model,
+					A2(author$project$Main$clickTile, coord, grid)));
+		} else {
+			var boolGrid = msg.a;
+			return _Utils_Tuple2(
+				author$project$Main$initGridToModel(boolGrid),
+				elm$core$Platform$Cmd$none);
+		}
+	});
+var author$project$Main$Click = function (a) {
+	return {$: 'Click', a: a};
+};
 var rtfeldman$elm_css$Css$Preprocess$AppendProperty = function (a) {
 	return {$: 'AppendProperty', a: a};
 };
@@ -6486,22 +6546,6 @@ var elm$core$List$singleton = function (value) {
 var rtfeldman$elm_css$Css$Preprocess$stylesheet = function (snippets) {
 	return {charset: elm$core$Maybe$Nothing, imports: _List_Nil, namespaces: _List_Nil, snippets: snippets};
 };
-var elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
-		}
-	});
-var elm$core$List$concat = function (lists) {
-	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
-};
-var elm$core$List$concatMap = F2(
-	function (f, list) {
-		return elm$core$List$concat(
-			A2(elm$core$List$map, f, list));
-	});
 var rtfeldman$elm_css$Css$Preprocess$unwrapSnippet = function (_n0) {
 	var declarations = _n0.a;
 	return declarations;
@@ -8099,10 +8143,7 @@ var rtfeldman$elm_css$Html$Styled$Events$onClick = function (msg) {
 };
 var author$project$Main$viewTile = F2(
 	function (grid, tile) {
-		var n = A2(
-			elm$core$Maybe$withDefault,
-			0,
-			A2(author$project$Main$neighbouringBombsCount, grid, tile));
+		var n = A2(author$project$Main$neighbouringBombsCount, grid, tile);
 		var coord = A2(
 			elm$core$Maybe$withDefault,
 			_Utils_Tuple2(0, 0),

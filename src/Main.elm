@@ -84,10 +84,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Click coord ->
-            Grid.getElem model.tileGrid coord
-                |> Maybe.map (\s -> { s | revealed = True })
-                |> Maybe.withDefault (Tile False "DEFAULT" False)
-                |> Grid.set coord model.tileGrid
+            let
+                grid =
+                    model.tileGrid
+            in
+            clickTile coord grid
                 |> updateTileGrid model
                 |> pairFlipped Cmd.none
 
@@ -129,7 +130,6 @@ viewTile grid tile =
 
         n =
             neighbouringBombsCount grid tile
-                |> Maybe.withDefault 0
     in
     td [ onClick (Click coord), css (styleTile tile) ]
         [ text (textTile tile.revealed tile.bomb n)
@@ -168,18 +168,23 @@ styleTileBase =
 -- DOMAIN
 
 
-neighbouringBombsCount : Grid Tile -> Tile -> Maybe Int
+neighbouringBombsCount : Grid Tile -> Tile -> Int
 neighbouringBombsCount grid tile =
     Grid.getCoord grid tile
         |> Maybe.map (neighbouringCoordsBombCount grid)
+        |> Maybe.withDefault 0
+
+
+neighbours : Grid a -> Coord -> List a
+neighbours grid =
+    Grid.getNeighbouringCoords
+        >> List.map (Grid.getElem grid)
+        >> Maybe.Extra.values
 
 
 neighbouringCoordsBombCount : Grid Tile -> Coord -> Int
 neighbouringCoordsBombCount grid =
-    Grid.getNeighbouringCoords
-        >> List.map (Grid.getElem grid)
-        >> Maybe.Extra.values
-        >> List.Extra.count .bomb
+    neighbours grid >> List.Extra.count .bomb
 
 
 randomTileInitGrid : Int -> Int -> Random.Generator (Grid TileInit)
@@ -205,6 +210,37 @@ initGridToModel =
 initTileGrid : Grid TileInit -> Grid Tile
 initTileGrid =
     List.map (List.map (\( id, bomb ) -> Tile False id bomb))
+
+
+clickTile : Coord -> Grid Tile -> Grid Tile
+clickTile coord grid =
+    let
+        tile =
+            Grid.getElem grid coord
+                |> Maybe.withDefault (Tile True "DEFAULT" False)
+    in
+    if tile.revealed then
+        grid
+
+    else if neighbouringBombsCount grid tile == 0 then
+        clickTiles
+            (Grid.set
+                grid
+                coord
+                { tile | revealed = True }
+            )
+            (Grid.getNeighbouringCoords coord)
+
+    else
+        Grid.set
+            grid
+            coord
+            { tile | revealed = True }
+
+
+clickTiles : Grid Tile -> List Coord -> Grid Tile
+clickTiles grid coords =
+    List.foldr clickTile grid coords
 
 
 

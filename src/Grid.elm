@@ -12,8 +12,8 @@ type alias Coord =
     ( Int, Int )
 
 
-set : Coord -> Grid a -> a -> Grid a
-set ( x, y ) grid occupant =
+set : Grid a -> Coord -> a -> Grid a
+set grid ( x, y ) occupant =
     List.Extra.getAt y grid
         |> Maybe.map (List.Extra.setAt x occupant)
         |> Maybe.map (\r -> List.Extra.setAt y r grid)
