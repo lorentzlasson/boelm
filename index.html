@@ -4409,8 +4409,8 @@ var author$project$Main$Model = function (tileGrid) {
 var author$project$Main$GotBoardInit = function (a) {
 	return {$: 'GotBoardInit', a: a};
 };
-var author$project$Main$boardSize = 5;
-var author$project$Main$difficulty = 20;
+var author$project$Main$boardSize = 10;
+var author$project$Main$difficulty = 10;
 var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
 var elm$core$Array$foldr = F3(
 	function (func, baseCase, _n0) {
@@ -5863,6 +5863,8 @@ var author$project$Main$update = F2(
 var author$project$Main$Click = function (a) {
 	return {$: 'Click', a: a};
 };
+var author$project$Main$tileSize = (100 / author$project$Main$boardSize) * 0.9;
+var author$project$Main$numberSize = author$project$Main$tileSize * 7;
 var rtfeldman$elm_css$Css$Preprocess$AppendProperty = function (a) {
 	return {$: 'AppendProperty', a: a};
 };
@@ -5875,7 +5877,7 @@ var rtfeldman$elm_css$Css$prop1 = F2(
 		return A2(rtfeldman$elm_css$Css$property, key, arg.value);
 	});
 var rtfeldman$elm_css$Css$height = rtfeldman$elm_css$Css$prop1('height');
-var rtfeldman$elm_css$Css$PxUnits = {$: 'PxUnits'};
+var rtfeldman$elm_css$Css$VhUnits = {$: 'VhUnits'};
 var elm$core$String$fromFloat = _String_fromNumber;
 var rtfeldman$elm_css$Css$Structure$Compatible = {$: 'Compatible'};
 var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
@@ -5902,14 +5904,16 @@ var rtfeldman$elm_css$Css$Internal$lengthConverter = F3(
 				unitLabel)
 		};
 	});
-var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, rtfeldman$elm_css$Css$PxUnits, 'px');
+var rtfeldman$elm_css$Css$vh = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, rtfeldman$elm_css$Css$VhUnits, 'vh');
+var rtfeldman$elm_css$Css$VwUnits = {$: 'VwUnits'};
+var rtfeldman$elm_css$Css$vw = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, rtfeldman$elm_css$Css$VwUnits, 'vw');
 var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
 var author$project$Main$styleTileBase = _List_fromArray(
 	[
 		rtfeldman$elm_css$Css$width(
-		rtfeldman$elm_css$Css$px(100)),
+		rtfeldman$elm_css$Css$vw(author$project$Main$tileSize)),
 		rtfeldman$elm_css$Css$height(
-		rtfeldman$elm_css$Css$px(100))
+		rtfeldman$elm_css$Css$vh(author$project$Main$tileSize))
 	]);
 var rtfeldman$elm_css$Css$backgroundColor = function (c) {
 	return A2(rtfeldman$elm_css$Css$property, 'background-color', c.value);
@@ -6317,6 +6321,8 @@ var rtfeldman$elm_css$Css$hex = function (str) {
 	}
 	return rtfeldman$elm_css$Css$erroneousHex(str);
 };
+var rtfeldman$elm_css$Css$PxUnits = {$: 'PxUnits'};
+var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, rtfeldman$elm_css$Css$PxUnits, 'px');
 var rtfeldman$elm_css$Css$Internal$property = F2(
 	function (key, value) {
 		return rtfeldman$elm_css$Css$Preprocess$AppendProperty(key + (':' + value));
@@ -6404,7 +6410,7 @@ var author$project$Main$styleTile = function (tile) {
 				rtfeldman$elm_css$Css$hex('FFFFFF')),
 				rtfeldman$elm_css$Css$textAlign(rtfeldman$elm_css$Css$center),
 				rtfeldman$elm_css$Css$fontSize(
-				rtfeldman$elm_css$Css$px(50))
+				rtfeldman$elm_css$Css$px(author$project$Main$numberSize))
 			]))) : _Utils_ap(
 		author$project$Main$styleTileBase,
 		_List_fromArray(
