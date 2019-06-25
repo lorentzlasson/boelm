@@ -1,7 +1,7 @@
 module Main exposing (init)
 
 import Browser
-import Css exposing (Style, backgroundColor, center, fontSize, height, hex, px, textAlign, vh, vw, width)
+import Css exposing (Style, backgroundColor, center, fontSize, height, hex, textAlign, vh, vw, width)
 import Grid exposing (Coord, Grid)
 import Html.Events exposing (onClick)
 import Html.Styled exposing (Html, table, td, text, toUnstyled, tr)
@@ -30,7 +30,7 @@ tileSize =
 
 numberSize : Float
 numberSize =
-    tileSize * 7
+    tileSize / 2
 
 
 difficulty : Int
@@ -162,7 +162,7 @@ styleTile tile =
             styleTileBase ++ [ backgroundColor (hex "000000") ]
 
         else
-            styleTileBase ++ [ backgroundColor (hex "FFFFFF"), textAlign center, fontSize (px numberSize) ]
+            styleTileBase ++ [ backgroundColor (hex "FFFFFF"), textAlign center, fontSize (vh numberSize) ]
 
     else
         styleTileBase ++ [ backgroundColor (hex "D9D9D9") ]
