@@ -20,7 +20,7 @@ import Random.String
 
 boardSize : Int
 boardSize =
-    50
+    10
 
 
 tileSize : Float
