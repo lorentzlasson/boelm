@@ -1,7 +1,7 @@
 module Main exposing (init)
 
 import Browser
-import Css exposing (Style, backgroundColor, center, fontSize, height, hex, px, textAlign, width)
+import Css exposing (Style, backgroundColor, center, fontSize, height, hex, px, textAlign, vh, vw, width)
 import Grid exposing (Coord, Grid)
 import Html.Events exposing (onClick)
 import Html.Styled exposing (Html, table, td, text, toUnstyled, tr)
@@ -20,12 +20,22 @@ import Random.String
 
 boardSize : Int
 boardSize =
-    5
+    50
+
+
+tileSize : Float
+tileSize =
+    (100 / toFloat boardSize) * 0.9
+
+
+numberSize : Float
+numberSize =
+    tileSize * 7
 
 
 difficulty : Int
 difficulty =
-    20
+    10
 
 
 
@@ -152,7 +162,7 @@ styleTile tile =
             styleTileBase ++ [ backgroundColor (hex "000000") ]
 
         else
-            styleTileBase ++ [ backgroundColor (hex "FFFFFF"), textAlign center, fontSize (px 50) ]
+            styleTileBase ++ [ backgroundColor (hex "FFFFFF"), textAlign center, fontSize (px numberSize) ]
 
     else
         styleTileBase ++ [ backgroundColor (hex "D9D9D9") ]
@@ -160,7 +170,7 @@ styleTile tile =
 
 styleTileBase : List Style
 styleTileBase =
-    [ width (px 100), height (px 100) ]
+    [ width (vw tileSize), height (vh tileSize) ]
 
 
 
