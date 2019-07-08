@@ -4,7 +4,7 @@ import Browser
 import Css exposing (Style, backgroundColor, center, fontSize, height, hex, textAlign, vh, vw, width)
 import Grid exposing (Coord, Grid)
 import Html.Events exposing (onClick)
-import Html.Styled exposing (Html, table, td, text, toUnstyled, tr)
+import Html.Styled exposing (Html, div, table, td, text, toUnstyled, tr)
 import Html.Styled.Attributes exposing (css, href, src)
 import Html.Styled.Events exposing (onClick)
 import List.Extra
@@ -56,7 +56,8 @@ main =
 
 
 type alias Model =
-    { tileGrid : Grid Tile
+    { gameState : GameState
+    , tileGrid : Grid Tile
     }
 
 
@@ -67,13 +68,19 @@ type alias Tile =
     }
 
 
+type GameState
+    = Playing
+    | Lost
+    | Won
+
+
 type alias TileInit =
     ( String, Bool )
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model [ [] ], getBoardInit )
+    ( Model Playing [ [] ], getBoardInit )
 
 
 getBoardInit : Cmd Msg
@@ -100,6 +107,7 @@ update msg model =
             in
             clickTile coord grid
                 |> updateTileGrid model
+                |> updateGameState
                 |> pairFlipped Cmd.none
 
         GotBoardInit boolGrid ->
@@ -109,6 +117,11 @@ update msg model =
 updateTileGrid : Model -> Grid Tile -> Model
 updateTileGrid model grid =
     { model | tileGrid = grid }
+
+
+updateGameState : Model -> Model
+updateGameState model =
+    { model | gameState = gameState model.tileGrid }
 
 
 
@@ -121,8 +134,29 @@ view model =
         grid =
             model.tileGrid
     in
-    table []
-        (List.map (viewTileRow grid) grid)
+    div []
+        [ table []
+            (List.map (viewTileRow grid) grid)
+        , text (viewGameState model.gameState)
+        ]
+
+
+viewGameState : GameState -> String
+viewGameState state =
+    case state of
+        Playing ->
+            ""
+
+        Won ->
+            repeatRow "🎉"
+
+        Lost ->
+            repeatRow "💥"
+
+
+repeatRow : String -> String
+repeatRow =
+    List.repeat 50 >> String.concat
 
 
 viewTileRow : Grid Tile -> List Tile -> Html Msg
@@ -178,6 +212,38 @@ styleTileBase =
 -- DOMAIN
 
 
+gameState : Grid Tile -> GameState
+gameState grid =
+    if hasWon grid then
+        Won
+
+    else if hasLost grid then
+        Lost
+
+    else
+        Playing
+
+
+hasWon : Grid Tile -> Bool
+hasWon =
+    List.concat
+        >> List.partition .bomb
+        >> bombsHiddenRestRevealed
+
+
+hasLost : Grid Tile -> Bool
+hasLost =
+    List.concat
+        >> List.filter .bomb
+        >> List.any .revealed
+
+
+bombsHiddenRestRevealed : ( List Tile, List Tile ) -> Bool
+bombsHiddenRestRevealed ( bombs, rest ) =
+    List.all (.revealed >> not) bombs
+        && List.all .revealed rest
+
+
 neighbouringBombsCount : Grid Tile -> Tile -> Int
 neighbouringBombsCount grid tile =
     Grid.getCoord grid tile
@@ -214,7 +280,7 @@ randomTileInit percent =
 
 initGridToModel : Grid TileInit -> Model
 initGridToModel =
-    initTileGrid >> Model
+    initTileGrid >> Model Playing
 
 
 initTileGrid : Grid TileInit -> Grid Tile
