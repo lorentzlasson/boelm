@@ -1,4 +1,4 @@
-module Main exposing (init)
+module Main exposing (Tile, clickTile, init, initTileGrid, neighbours)
 
 import Browser
 import Css exposing (Style, backgroundColor, center, fontSize, height, hex, textAlign, vh, vw, width)
