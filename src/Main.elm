@@ -105,10 +105,14 @@ update msg model =
                 grid =
                     model.tileGrid
             in
-            clickTile coord grid
-                |> updateTileGrid model
-                |> updateGameState
-                |> pairFlipped Cmd.none
+            if gameIsOver model.gameState then
+                ( model, Cmd.none )
+
+            else
+                clickTile coord grid
+                    |> updateTileGrid model
+                    |> updateGameState
+                    |> pairFlipped Cmd.none
 
         GotBoardInit boolGrid ->
             ( initGridToModel boolGrid, Cmd.none )
@@ -236,6 +240,16 @@ hasLost =
     List.concat
         >> List.filter .bomb
         >> List.any .revealed
+
+
+gameIsOver : GameState -> Bool
+gameIsOver state =
+    case state of
+        Playing ->
+            False
+
+        _ ->
+            True
 
 
 bombsHiddenRestRevealed : ( List Tile, List Tile ) -> Bool
