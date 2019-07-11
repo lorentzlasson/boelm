@@ -4403,9 +4403,11 @@ function _Browser_load(url)
 		}
 	}));
 }
-var author$project$Main$Model = function (tileGrid) {
-	return {tileGrid: tileGrid};
-};
+var author$project$Main$Model = F2(
+	function (gameState, tileGrid) {
+		return {gameState: gameState, tileGrid: tileGrid};
+	});
+var author$project$Main$Playing = {$: 'Playing'};
 var author$project$Main$GotBoardInit = function (a) {
 	return {$: 'GotBoardInit', a: a};
 };
@@ -5310,7 +5312,9 @@ var author$project$Main$getBoardInit = A2(
 	A2(author$project$Main$randomTileInitGrid, author$project$Main$difficulty, author$project$Main$boardSize));
 var author$project$Main$init = function (_n0) {
 	return _Utils_Tuple2(
-		author$project$Main$Model(
+		A2(
+			author$project$Main$Model,
+			author$project$Main$Playing,
 			_List_fromArray(
 				[_List_Nil])),
 		author$project$Main$getBoardInit);
@@ -5821,6 +5825,13 @@ var author$project$Main$clickTiles = F2(
 	function (grid, coords) {
 		return A3(elm$core$List$foldr, author$project$Main$clickTile, grid, coords);
 	});
+var author$project$Main$gameIsOver = function (state) {
+	if (state.$ === 'Playing') {
+		return false;
+	} else {
+		return true;
+	}
+};
 var author$project$Main$initTileGrid = elm$core$List$map(
 	elm$core$List$map(
 		function (_n0) {
@@ -5828,11 +5839,104 @@ var author$project$Main$initTileGrid = elm$core$List$map(
 			var bomb = _n0.b;
 			return A3(author$project$Main$Tile, false, id, bomb);
 		}));
-var author$project$Main$initGridToModel = A2(elm$core$Basics$composeR, author$project$Main$initTileGrid, author$project$Main$Model);
+var author$project$Main$initGridToModel = A2(
+	elm$core$Basics$composeR,
+	author$project$Main$initTileGrid,
+	author$project$Main$Model(author$project$Main$Playing));
 var author$project$Main$pairFlipped = F2(
 	function (a, b) {
 		return _Utils_Tuple2(b, a);
 	});
+var author$project$Main$Lost = {$: 'Lost'};
+var author$project$Main$Won = {$: 'Won'};
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var author$project$Main$hasLost = A2(
+	elm$core$Basics$composeR,
+	elm$core$List$concat,
+	A2(
+		elm$core$Basics$composeR,
+		elm$core$List$filter(
+			function ($) {
+				return $.bomb;
+			}),
+		elm$core$List$any(
+			function ($) {
+				return $.revealed;
+			})));
+var elm$core$Basics$not = _Basics_not;
+var elm$core$List$all = F2(
+	function (isOkay, list) {
+		return !A2(
+			elm$core$List$any,
+			A2(elm$core$Basics$composeL, elm$core$Basics$not, isOkay),
+			list);
+	});
+var author$project$Main$bombsHiddenRestRevealed = function (_n0) {
+	var bombs = _n0.a;
+	var rest = _n0.b;
+	return A2(
+		elm$core$List$all,
+		A2(
+			elm$core$Basics$composeR,
+			function ($) {
+				return $.revealed;
+			},
+			elm$core$Basics$not),
+		bombs) && A2(
+		elm$core$List$all,
+		function ($) {
+			return $.revealed;
+		},
+		rest);
+};
+var elm$core$List$partition = F2(
+	function (pred, list) {
+		var step = F2(
+			function (x, _n0) {
+				var trues = _n0.a;
+				var falses = _n0.b;
+				return pred(x) ? _Utils_Tuple2(
+					A2(elm$core$List$cons, x, trues),
+					falses) : _Utils_Tuple2(
+					trues,
+					A2(elm$core$List$cons, x, falses));
+			});
+		return A3(
+			elm$core$List$foldr,
+			step,
+			_Utils_Tuple2(_List_Nil, _List_Nil),
+			list);
+	});
+var author$project$Main$hasWon = A2(
+	elm$core$Basics$composeR,
+	elm$core$List$concat,
+	A2(
+		elm$core$Basics$composeR,
+		elm$core$List$partition(
+			function ($) {
+				return $.bomb;
+			}),
+		author$project$Main$bombsHiddenRestRevealed));
+var author$project$Main$gameState = function (grid) {
+	return author$project$Main$hasWon(grid) ? author$project$Main$Won : (author$project$Main$hasLost(grid) ? author$project$Main$Lost : author$project$Main$Playing);
+};
+var author$project$Main$updateGameState = function (model) {
+	return _Utils_update(
+		model,
+		{
+			gameState: author$project$Main$gameState(model.tileGrid)
+		});
+};
 var author$project$Main$updateTileGrid = F2(
 	function (model, grid) {
 		return _Utils_update(
@@ -5846,13 +5950,14 @@ var author$project$Main$update = F2(
 		if (msg.$ === 'Click') {
 			var coord = msg.a;
 			var grid = model.tileGrid;
-			return A2(
+			return author$project$Main$gameIsOver(model.gameState) ? _Utils_Tuple2(model, elm$core$Platform$Cmd$none) : A2(
 				author$project$Main$pairFlipped,
 				elm$core$Platform$Cmd$none,
-				A2(
-					author$project$Main$updateTileGrid,
-					model,
-					A2(author$project$Main$clickTile, coord, grid)));
+				author$project$Main$updateGameState(
+					A2(
+						author$project$Main$updateTileGrid,
+						model,
+						A2(author$project$Main$clickTile, coord, grid))));
 		} else {
 			var boolGrid = msg.a;
 			return _Utils_Tuple2(
@@ -5860,11 +5965,49 @@ var author$project$Main$update = F2(
 				elm$core$Platform$Cmd$none);
 		}
 	});
+var elm$core$List$repeatHelp = F3(
+	function (result, n, value) {
+		repeatHelp:
+		while (true) {
+			if (n <= 0) {
+				return result;
+			} else {
+				var $temp$result = A2(elm$core$List$cons, value, result),
+					$temp$n = n - 1,
+					$temp$value = value;
+				result = $temp$result;
+				n = $temp$n;
+				value = $temp$value;
+				continue repeatHelp;
+			}
+		}
+	});
+var elm$core$List$repeat = F2(
+	function (n, value) {
+		return A3(elm$core$List$repeatHelp, _List_Nil, n, value);
+	});
+var elm$core$String$concat = function (strings) {
+	return A2(elm$core$String$join, '', strings);
+};
+var author$project$Main$repeatRow = A2(
+	elm$core$Basics$composeR,
+	elm$core$List$repeat(50),
+	elm$core$String$concat);
+var author$project$Main$viewGameState = function (state) {
+	switch (state.$) {
+		case 'Playing':
+			return '';
+		case 'Won':
+			return author$project$Main$repeatRow('🎉');
+		default:
+			return author$project$Main$repeatRow('💥');
+	}
+};
 var author$project$Main$Click = function (a) {
 	return {$: 'Click', a: a};
 };
 var author$project$Main$tileSize = (100 / author$project$Main$boardSize) * 0.9;
-var author$project$Main$numberSize = author$project$Main$tileSize * 7;
+var author$project$Main$numberSize = author$project$Main$tileSize / 2;
 var rtfeldman$elm_css$Css$Preprocess$AppendProperty = function (a) {
 	return {$: 'AppendProperty', a: a};
 };
@@ -6321,8 +6464,6 @@ var rtfeldman$elm_css$Css$hex = function (str) {
 	}
 	return rtfeldman$elm_css$Css$erroneousHex(str);
 };
-var rtfeldman$elm_css$Css$PxUnits = {$: 'PxUnits'};
-var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, rtfeldman$elm_css$Css$PxUnits, 'px');
 var rtfeldman$elm_css$Css$Internal$property = F2(
 	function (key, value) {
 		return rtfeldman$elm_css$Css$Preprocess$AppendProperty(key + (':' + value));
@@ -6410,7 +6551,7 @@ var author$project$Main$styleTile = function (tile) {
 				rtfeldman$elm_css$Css$hex('FFFFFF')),
 				rtfeldman$elm_css$Css$textAlign(rtfeldman$elm_css$Css$center),
 				rtfeldman$elm_css$Css$fontSize(
-				rtfeldman$elm_css$Css$px(author$project$Main$numberSize))
+				rtfeldman$elm_css$Css$vh(author$project$Main$numberSize))
 			]))) : _Utils_ap(
 		author$project$Main$styleTileBase,
 		_List_fromArray(
@@ -6419,7 +6560,6 @@ var author$project$Main$styleTile = function (tile) {
 				rtfeldman$elm_css$Css$hex('D9D9D9'))
 			]));
 };
-var elm$core$Basics$not = _Basics_not;
 var author$project$Main$textTile = F3(
 	function (revealed, bomb, n) {
 		return ((!revealed) || (bomb || (!n))) ? '' : elm$core$String$fromInt(n);
@@ -7648,13 +7788,6 @@ var elm$core$Dict$insert = F3(
 			return x;
 		}
 	});
-var elm$core$List$all = F2(
-	function (isOkay, list) {
-		return !A2(
-			elm$core$List$any,
-			A2(elm$core$Basics$composeL, elm$core$Basics$not, isOkay),
-			list);
-	});
 var rtfeldman$elm_css$Css$Structure$compactHelp = F2(
 	function (declaration, _n0) {
 		var keyframesByName = _n0.a;
@@ -7754,17 +7887,6 @@ var rtfeldman$elm_css$Css$Structure$compactStylesheet = function (_n0) {
 	var finalDeclarations = A2(rtfeldman$elm_css$Css$Structure$withKeyframeDeclarations, keyframesByName, compactedDeclarations);
 	return {charset: charset, declarations: finalDeclarations, imports: imports, namespaces: namespaces};
 };
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
 var rtfeldman$elm_css$Css$Structure$Output$charsetToString = function (charset) {
 	return A2(
 		elm$core$Maybe$withDefault,
@@ -8180,16 +8302,25 @@ var author$project$Main$viewTileRow = F2(
 				author$project$Main$viewTile(grid),
 				tiles));
 	});
+var rtfeldman$elm_css$Html$Styled$div = rtfeldman$elm_css$Html$Styled$node('div');
 var rtfeldman$elm_css$Html$Styled$table = rtfeldman$elm_css$Html$Styled$node('table');
 var author$project$Main$view = function (model) {
 	var grid = model.tileGrid;
 	return A2(
-		rtfeldman$elm_css$Html$Styled$table,
+		rtfeldman$elm_css$Html$Styled$div,
 		_List_Nil,
-		A2(
-			elm$core$List$map,
-			author$project$Main$viewTileRow(grid),
-			grid));
+		_List_fromArray(
+			[
+				A2(
+				rtfeldman$elm_css$Html$Styled$table,
+				_List_Nil,
+				A2(
+					elm$core$List$map,
+					author$project$Main$viewTileRow(grid),
+					grid)),
+				rtfeldman$elm_css$Html$Styled$text(
+				author$project$Main$viewGameState(model.gameState))
+			]));
 };
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
