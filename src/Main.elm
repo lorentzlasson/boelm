@@ -58,10 +58,16 @@ type alias Model =
 
 
 type alias Tile =
-    { revealed : Bool
+    { tileState : TileState
     , id : String
     , bomb : Bool
     }
+
+
+type TileState
+    = Default
+    | Flagged
+    | Revealed
 
 
 type GameState
@@ -171,35 +177,45 @@ viewTile grid tile =
         coord =
             Grid.getCoord grid tile
                 |> Maybe.withDefault ( 0, 0 )
-
-        n =
-            neighbouringBombsCount grid tile
     in
     td [ onClick (Click coord), css (styleTile tile) ]
-        [ text (textTile tile.revealed tile.bomb n)
+        [ text (textTile grid tile)
         ]
 
 
-textTile : Bool -> Bool -> Int -> String
-textTile revealed bomb n =
-    if not revealed || bomb || n == 0 then
-        ""
+textTile : Grid Tile -> Tile -> String
+textTile grid tile =
+    let
+        n =
+            neighbouringBombsCount grid tile
+    in
+    case tile.tileState of
+        Revealed ->
+            if n == 0 then
+                ""
 
-    else
-        String.fromInt n
+            else
+                String.fromInt n
+
+        _ ->
+            ""
 
 
 styleTile : Tile -> List Style
 styleTile tile =
-    if tile.revealed then
-        if tile.bomb then
-            styleTileBase ++ [ backgroundColor (hex "000000") ]
+    case tile.tileState of
+        Default ->
+            styleTileBase ++ [ backgroundColor (hex "D9D9D9") ]
 
-        else
-            styleTileBase ++ [ backgroundColor (hex "FFFFFF"), textAlign center, fontSize (px numberSize) ]
+        Flagged ->
+            styleTileBase ++ [ backgroundColor (hex "F5BF42") ]
 
-    else
-        styleTileBase ++ [ backgroundColor (hex "D9D9D9") ]
+        Revealed ->
+            if tile.bomb then
+                styleTileBase ++ [ backgroundColor (hex "000000") ]
+
+            else
+                styleTileBase ++ [ backgroundColor (hex "FFFFFF"), textAlign center, fontSize (px numberSize) ]
 
 
 styleTileBase : List Style
@@ -210,6 +226,16 @@ styleTileBase =
 
 -- UTIL
 -- DOMAIN
+
+
+isRevealed : Tile -> Bool
+isRevealed tile =
+    case tile.tileState of
+        Revealed ->
+            True
+
+        _ ->
+            False
 
 
 gameState : Grid Tile -> GameState
@@ -235,7 +261,7 @@ hasLost : Grid Tile -> Bool
 hasLost =
     List.concat
         >> List.filter .bomb
-        >> List.any .revealed
+        >> List.any isRevealed
 
 
 gameIsOver : GameState -> Bool
@@ -250,8 +276,8 @@ gameIsOver state =
 
 bombsHiddenRestRevealed : ( List Tile, List Tile ) -> Bool
 bombsHiddenRestRevealed ( bombs, rest ) =
-    List.all (.revealed >> not) bombs
-        && List.all .revealed rest
+    List.all (isRevealed >> not) bombs
+        && List.all isRevealed rest
 
 
 neighbouringBombsCount : Grid Tile -> Tile -> Int
@@ -295,7 +321,7 @@ initGridToModel =
 
 initTileGrid : Grid TileInit -> Grid Tile
 initTileGrid =
-    List.map (List.map (\( id, bomb ) -> Tile False id bomb))
+    List.map (List.map (\( id, bomb ) -> Tile Default id bomb))
 
 
 clickTile : Coord -> Grid Tile -> Grid Tile
@@ -303,9 +329,9 @@ clickTile coord grid =
     let
         tile =
             Grid.getElem grid coord
-                |> Maybe.withDefault (Tile True "DEFAULT" False)
+                |> Maybe.withDefault (Tile Revealed "DEFAULT" False)
     in
-    if tile.revealed then
+    if isRevealed tile then
         grid
 
     else if neighbouringBombsCount grid tile == 0 then
@@ -313,7 +339,7 @@ clickTile coord grid =
             (Grid.set
                 grid
                 coord
-                { tile | revealed = True }
+                { tile | tileState = Revealed }
             )
             (Grid.getNeighbouringCoords coord)
 
@@ -321,7 +347,7 @@ clickTile coord grid =
         Grid.set
             grid
             coord
-            { tile | revealed = True }
+            { tile | tileState = Revealed }
 
 
 clickTiles : Grid Tile -> List Coord -> Grid Tile
