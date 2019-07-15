@@ -1,7 +1,7 @@
 module Main exposing (Tile, clickTile, init, initTileGrid, neighbours)
 
 import Browser
-import Css exposing (Style, backgroundColor, center, fontSize, height, hex, textAlign, vh, vw, width)
+import Css exposing (Style, backgroundColor, center, fontSize, height, hex, px, textAlign, width)
 import Grid exposing (Coord, Grid)
 import Html.Events exposing (onClick)
 import Html.Styled exposing (Html, div, table, td, text, toUnstyled, tr)
@@ -25,7 +25,7 @@ boardSize =
 
 tileSize : Float
 tileSize =
-    (100 / toFloat boardSize) * 0.9
+    50
 
 
 numberSize : Float
@@ -201,7 +201,7 @@ styleTile tile =
             styleTileBase ++ [ backgroundColor (hex "000000") ]
 
         else
-            styleTileBase ++ [ backgroundColor (hex "FFFFFF"), textAlign center, fontSize (vh numberSize) ]
+            styleTileBase ++ [ backgroundColor (hex "FFFFFF"), textAlign center, fontSize (px numberSize) ]
 
     else
         styleTileBase ++ [ backgroundColor (hex "D9D9D9") ]
@@ -209,7 +209,7 @@ styleTile tile =
 
 styleTileBase : List Style
 styleTileBase =
-    [ width (vw tileSize), height (vh tileSize) ]
+    [ width (px tileSize), height (px tileSize) ]
 
 
 
