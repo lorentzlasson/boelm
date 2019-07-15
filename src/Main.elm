@@ -18,11 +18,6 @@ import Random.String
 -- CONSTANTS
 
 
-boardSize : Int
-boardSize =
-    10
-
-
 tileSize : Float
 tileSize =
     50
@@ -42,7 +37,7 @@ difficulty =
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program Int Model Msg
 main =
     Browser.element
         { init = init
@@ -79,13 +74,13 @@ type alias TileInit =
     ( String, Bool )
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( Model Playing [ [] ], getBoardInit )
+init : Int -> ( Model, Cmd Msg )
+init boardSize =
+    ( Model Playing [ [] ], getBoardInit boardSize )
 
 
-getBoardInit : Cmd Msg
-getBoardInit =
+getBoardInit : Int -> Cmd Msg
+getBoardInit boardSize =
     Random.generate GotBoardInit (randomTileInitGrid difficulty boardSize)
 
 
