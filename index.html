@@ -1,0 +1,23 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Boelm</title>
+    <script src="main.js"></script>
+  </head>
+  <body>
+    <div id="elm"></div>
+    <script>
+      const getQueryParam = name =>
+        new URLSearchParams(window.location.search).get(name)
+      const boardSize = parseInt(getQueryParam('size'))
+    </script>
+
+    <script>
+      const app = Elm.Main.init({
+        node: document.getElementById('elm'),
+        flags: boardSize
+      });
+    </script>
+  </body>
+</html>
