@@ -3,7 +3,6 @@ module Main exposing (Tile, clickTile, init, initTileGrid, neighbours)
 import Browser
 import Css exposing (Style, backgroundColor, center, fontSize, height, hex, px, textAlign, width)
 import Grid exposing (Coord, Grid)
-import Html.Events exposing (onClick)
 import Html.Styled exposing (Html, div, table, td, text, toUnstyled, tr)
 import Html.Styled.Attributes exposing (css, href, src)
 import Html.Styled.Events exposing (onClick)
