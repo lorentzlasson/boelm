@@ -6,6 +6,7 @@ import Grid exposing (Coord, Grid)
 import Html.Styled exposing (Html, div, table, td, text, toUnstyled, tr)
 import Html.Styled.Attributes exposing (css, href, src)
 import Html.Styled.Events exposing (onClick)
+import Json.Decode
 import List.Extra
 import Maybe.Extra
 import Random
@@ -95,6 +96,7 @@ getBoardInit boardSize =
 
 type Msg
     = Click Coord
+    | RightClick Coord
     | GotBoardInit (Grid TileInit)
 
 
@@ -113,6 +115,19 @@ update msg model =
                 clickTile coord grid
                     |> updateTileGrid model
                     |> updateGameState
+                    |> pairFlipped Cmd.none
+
+        RightClick coord ->
+            let
+                grid =
+                    model.tileGrid
+            in
+            if gameIsOver model.gameState then
+                ( model, Cmd.none )
+
+            else
+                rightClickTile coord grid
+                    |> updateTileGrid model
                     |> pairFlipped Cmd.none
 
         GotBoardInit boolGrid ->
@@ -177,7 +192,13 @@ viewTile grid tile =
             Grid.getCoord grid tile
                 |> Maybe.withDefault ( 0, 0 )
     in
-    td [ onClick (Click coord), css (styleTile tile) ]
+    td
+        [ onClick
+            (Click coord)
+        , onRightClick
+            (RightClick coord)
+        , css (styleTile tile)
+        ]
         [ text (textTile grid tile)
         ]
 
@@ -231,6 +252,16 @@ isRevealed : Tile -> Bool
 isRevealed tile =
     case tile.tileState of
         Revealed ->
+            True
+
+        _ ->
+            False
+
+
+isFlagged : Tile -> Bool
+isFlagged tile =
+    case tile.tileState of
+        Flagged ->
             True
 
         _ ->
@@ -330,7 +361,7 @@ clickTile coord grid =
             Grid.getElem grid coord
                 |> Maybe.withDefault (Tile Revealed "DEFAULT" False)
     in
-    if isRevealed tile then
+    if isRevealed tile || isFlagged tile then
         grid
 
     else if neighbouringBombsCount grid tile == 0 then
@@ -354,6 +385,36 @@ clickTiles grid coords =
     List.foldr clickTile grid coords
 
 
+rightClickTile : Coord -> Grid Tile -> Grid Tile
+rightClickTile coord grid =
+    let
+        tile =
+            Grid.getElem grid coord
+                |> Maybe.withDefault (Tile Flagged "DEFAULT" False)
+    in
+    if isRevealed tile then
+        grid
+
+    else
+        Grid.set
+            grid
+            coord
+            { tile | tileState = toggledFlagState tile }
+
+
+toggledFlagState : Tile -> TileState
+toggledFlagState tile =
+    case tile.tileState of
+        Default ->
+            Flagged
+
+        Flagged ->
+            Default
+
+        a ->
+            a
+
+
 
 -- GENERIC
 
@@ -373,3 +434,14 @@ randomId =
 pairFlipped : a -> b -> ( b, a )
 pairFlipped a b =
     ( b, a )
+
+
+onRightClick : msg -> Html.Styled.Attribute msg
+onRightClick msg =
+    Html.Styled.Events.custom "contextmenu"
+        (Json.Decode.succeed
+            { message = msg
+            , stopPropagation = True
+            , preventDefault = True
+            }
+        )
