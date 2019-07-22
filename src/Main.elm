@@ -1,10 +1,12 @@
 module Main exposing (Tile, clickTile, init, initTileGrid, neighbours)
 
 import Browser
+import Browser.Navigation
 import Css exposing (Style, backgroundColor, center, fontSize, height, hex, px, textAlign, width)
 import Grid exposing (Coord, Grid)
+import Html exposing (Html)
 import Html.Events exposing (onClick)
-import Html.Styled exposing (Html, div, table, td, text, toUnstyled, tr)
+import Html.Styled exposing (div, table, td, text, toUnstyled, tr)
 import Html.Styled.Attributes exposing (css, href, src)
 import Html.Styled.Events exposing (onClick)
 import List.Extra
@@ -12,6 +14,8 @@ import Maybe.Extra
 import Random
 import Random.Char
 import Random.String
+import Url
+import Url.Parser.Query
 
 
 
@@ -37,13 +41,15 @@ difficulty =
 -- MAIN
 
 
-main : Program Int Model Msg
+main : Program () Model Msg
 main =
-    Browser.element
+    Browser.application
         { init = init
+        , onUrlChange = \_ -> NoOp
+        , onUrlRequest = \_ -> NoOp
         , subscriptions = \_ -> Sub.none
         , update = update
-        , view = view >> toUnstyled
+        , view = view
         }
 
 
@@ -80,9 +86,23 @@ type alias TileInit =
     ( String, Bool )
 
 
-init : Int -> ( Model, Cmd Msg )
-init boardSize =
-    ( Model Playing [ [] ], getBoardInit boardSize )
+init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
+init _ url key =
+    ( Model Playing [ [] ]
+    , getBoardInit
+        Maybe.withDefault
+        10
+        (sizeFromUrl url)
+    )
+
+
+
+--  Url.fromString "http://localhost:8000/src/Main.elm?foo=bar" |> Maybe.andThen (Url.Parser.parse (Url.Parser.query (Url.Parser.Query.string "foo")))
+
+
+sizeFromUrl : Maybe String -> Maybe Int
+sizeFromUrl { query } =
+    Url.Parser.Query.int
 
 
 getBoardInit : Int -> Cmd Msg
@@ -97,6 +117,7 @@ getBoardInit boardSize =
 type Msg
     = Click Coord
     | GotBoardInit (Grid TileInit)
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -119,6 +140,9 @@ update msg model =
         GotBoardInit boolGrid ->
             ( initGridToModel boolGrid, Cmd.none )
 
+        NoOp ->
+            ( model, Cmd.none )
+
 
 updateTileGrid : Model -> Grid Tile -> Model
 updateTileGrid model grid =
@@ -134,17 +158,25 @@ updateGameState model =
 -- VIEW
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
+    Browser.Document "boelm"
+        [ viewDiv model ]
+
+
+viewDiv : Model -> Html.Html Msg
+viewDiv model =
     let
         grid =
             model.tileGrid
     in
-    div []
-        [ table []
-            (List.map (viewTileRow grid) grid)
-        , text (viewGameState model.gameState)
-        ]
+    toUnstyled
+        (div []
+            [ table []
+                (List.map (viewTileRow grid) grid)
+            , text (viewGameState model.gameState)
+            ]
+        )
 
 
 viewGameState : GameState -> String
@@ -165,13 +197,13 @@ repeatRow =
     List.repeat 50 >> String.concat
 
 
-viewTileRow : Grid Tile -> List Tile -> Html Msg
+viewTileRow : Grid Tile -> List Tile -> Html.Styled.Html Msg
 viewTileRow grid tiles =
     tr []
         (List.map (viewTile grid) tiles)
 
 
-viewTile : Grid Tile -> Tile -> Html Msg
+viewTile : Grid Tile -> Tile -> Html.Styled.Html Msg
 viewTile grid tile =
     let
         coord =
