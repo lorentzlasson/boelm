@@ -5622,10 +5622,27 @@ var author$project$Grid$set = F3(
 					A2(elm_community$list_extra$List$Extra$setAt, x, occupant),
 					A2(elm_community$list_extra$List$Extra$getAt, y, grid))));
 	});
+var author$project$Main$Revealed = {$: 'Revealed'};
 var author$project$Main$Tile = F3(
-	function (revealed, id, bomb) {
-		return {bomb: bomb, id: id, revealed: revealed};
+	function (tileState, id, bomb) {
+		return {bomb: bomb, id: id, tileState: tileState};
 	});
+var author$project$Main$isFlagged = function (tile) {
+	var _n0 = tile.tileState;
+	if (_n0.$ === 'Flagged') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var author$project$Main$isRevealed = function (tile) {
+	var _n0 = tile.tileState;
+	if (_n0.$ === 'Revealed') {
+		return true;
+	} else {
+		return false;
+	}
+};
 var elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -5793,9 +5810,9 @@ var author$project$Main$clickTile = F2(
 	function (coord, grid) {
 		var tile = A2(
 			elm$core$Maybe$withDefault,
-			A3(author$project$Main$Tile, true, 'DEFAULT', false),
+			A3(author$project$Main$Tile, author$project$Main$Revealed, 'DEFAULT', false),
 			A2(author$project$Grid$getElem, grid, coord));
-		return tile.revealed ? grid : ((!A2(author$project$Main$neighbouringBombsCount, grid, tile)) ? A2(
+		return (author$project$Main$isRevealed(tile) || author$project$Main$isFlagged(tile)) ? grid : ((!A2(author$project$Main$neighbouringBombsCount, grid, tile)) ? A2(
 			author$project$Main$clickTiles,
 			A3(
 				author$project$Grid$set,
@@ -5803,14 +5820,14 @@ var author$project$Main$clickTile = F2(
 				coord,
 				_Utils_update(
 					tile,
-					{revealed: true})),
+					{tileState: author$project$Main$Revealed})),
 			author$project$Grid$getNeighbouringCoords(coord)) : A3(
 			author$project$Grid$set,
 			grid,
 			coord,
 			_Utils_update(
 				tile,
-				{revealed: true})));
+				{tileState: author$project$Main$Revealed})));
 	});
 var author$project$Main$clickTiles = F2(
 	function (grid, coords) {
@@ -5823,12 +5840,13 @@ var author$project$Main$gameIsOver = function (state) {
 		return true;
 	}
 };
+var author$project$Main$Default = {$: 'Default'};
 var author$project$Main$initTileGrid = elm$core$List$map(
 	elm$core$List$map(
 		function (_n0) {
 			var id = _n0.a;
 			var bomb = _n0.b;
-			return A3(author$project$Main$Tile, false, id, bomb);
+			return A3(author$project$Main$Tile, author$project$Main$Default, id, bomb);
 		}));
 var author$project$Main$initGridToModel = A2(
 	elm$core$Basics$composeR,
@@ -5837,6 +5855,35 @@ var author$project$Main$initGridToModel = A2(
 var author$project$Main$pairFlipped = F2(
 	function (a, b) {
 		return _Utils_Tuple2(b, a);
+	});
+var author$project$Main$Flagged = {$: 'Flagged'};
+var author$project$Main$toggledFlagState = function (tile) {
+	var _n0 = tile.tileState;
+	switch (_n0.$) {
+		case 'Default':
+			return author$project$Main$Flagged;
+		case 'Flagged':
+			return author$project$Main$Default;
+		default:
+			var a = _n0;
+			return a;
+	}
+};
+var author$project$Main$rightClickTile = F2(
+	function (coord, grid) {
+		var tile = A2(
+			elm$core$Maybe$withDefault,
+			A3(author$project$Main$Tile, author$project$Main$Flagged, 'DEFAULT', false),
+			A2(author$project$Grid$getElem, grid, coord));
+		return author$project$Main$isRevealed(tile) ? grid : A3(
+			author$project$Grid$set,
+			grid,
+			coord,
+			_Utils_update(
+				tile,
+				{
+					tileState: author$project$Main$toggledFlagState(tile)
+				}));
 	});
 var author$project$Main$Lost = {$: 'Lost'};
 var author$project$Main$Won = {$: 'Won'};
@@ -5860,10 +5907,7 @@ var author$project$Main$hasLost = A2(
 			function ($) {
 				return $.bomb;
 			}),
-		elm$core$List$any(
-			function ($) {
-				return $.revealed;
-			})));
+		elm$core$List$any(author$project$Main$isRevealed)));
 var elm$core$Basics$not = _Basics_not;
 var elm$core$List$all = F2(
 	function (isOkay, list) {
@@ -5877,18 +5921,8 @@ var author$project$Main$bombsHiddenRestRevealed = function (_n0) {
 	var rest = _n0.b;
 	return A2(
 		elm$core$List$all,
-		A2(
-			elm$core$Basics$composeR,
-			function ($) {
-				return $.revealed;
-			},
-			elm$core$Basics$not),
-		bombs) && A2(
-		elm$core$List$all,
-		function ($) {
-			return $.revealed;
-		},
-		rest);
+		A2(elm$core$Basics$composeR, author$project$Main$isRevealed, elm$core$Basics$not),
+		bombs) && A2(elm$core$List$all, author$project$Main$isRevealed, rest);
 };
 var elm$core$List$partition = F2(
 	function (pred, list) {
@@ -5938,22 +5972,33 @@ var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'Click') {
-			var coord = msg.a;
-			var grid = model.tileGrid;
-			return author$project$Main$gameIsOver(model.gameState) ? _Utils_Tuple2(model, elm$core$Platform$Cmd$none) : A2(
-				author$project$Main$pairFlipped,
-				elm$core$Platform$Cmd$none,
-				author$project$Main$updateGameState(
+		switch (msg.$) {
+			case 'Click':
+				var coord = msg.a;
+				var grid = model.tileGrid;
+				return author$project$Main$gameIsOver(model.gameState) ? _Utils_Tuple2(model, elm$core$Platform$Cmd$none) : A2(
+					author$project$Main$pairFlipped,
+					elm$core$Platform$Cmd$none,
+					author$project$Main$updateGameState(
+						A2(
+							author$project$Main$updateTileGrid,
+							model,
+							A2(author$project$Main$clickTile, coord, grid))));
+			case 'RightClick':
+				var coord = msg.a;
+				var grid = model.tileGrid;
+				return author$project$Main$gameIsOver(model.gameState) ? _Utils_Tuple2(model, elm$core$Platform$Cmd$none) : A2(
+					author$project$Main$pairFlipped,
+					elm$core$Platform$Cmd$none,
 					A2(
 						author$project$Main$updateTileGrid,
 						model,
-						A2(author$project$Main$clickTile, coord, grid))));
-		} else {
-			var boolGrid = msg.a;
-			return _Utils_Tuple2(
-				author$project$Main$initGridToModel(boolGrid),
-				elm$core$Platform$Cmd$none);
+						A2(author$project$Main$rightClickTile, coord, grid)));
+			default:
+				var boolGrid = msg.a;
+				return _Utils_Tuple2(
+					author$project$Main$initGridToModel(boolGrid),
+					elm$core$Platform$Cmd$none);
 		}
 	});
 var elm$core$List$repeatHelp = F3(
@@ -5996,6 +6041,54 @@ var author$project$Main$viewGameState = function (state) {
 };
 var author$project$Main$Click = function (a) {
 	return {$: 'Click', a: a};
+};
+var author$project$Main$RightClick = function (a) {
+	return {$: 'RightClick', a: a};
+};
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var elm$virtual_dom$VirtualDom$Custom = function (a) {
+	return {$: 'Custom', a: a};
+};
+var elm$json$Json$Decode$map = _Json_map1;
+var elm$json$Json$Decode$map2 = _Json_map2;
+var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
+	switch (handler.$) {
+		case 'Normal':
+			return 0;
+		case 'MayStopPropagation':
+			return 1;
+		case 'MayPreventDefault':
+			return 2;
+		default:
+			return 3;
+	}
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var rtfeldman$elm_css$VirtualDom$Styled$Attribute = F3(
+	function (a, b, c) {
+		return {$: 'Attribute', a: a, b: b, c: c};
+	});
+var rtfeldman$elm_css$VirtualDom$Styled$on = F2(
+	function (eventName, handler) {
+		return A3(
+			rtfeldman$elm_css$VirtualDom$Styled$Attribute,
+			A2(elm$virtual_dom$VirtualDom$on, eventName, handler),
+			_List_Nil,
+			'');
+	});
+var rtfeldman$elm_css$Html$Styled$Events$custom = F2(
+	function (event, decoder) {
+		return A2(
+			rtfeldman$elm_css$VirtualDom$Styled$on,
+			event,
+			elm$virtual_dom$VirtualDom$Custom(decoder));
+	});
+var author$project$Main$onRightClick = function (msg) {
+	return A2(
+		rtfeldman$elm_css$Html$Styled$Events$custom,
+		'contextmenu',
+		elm$json$Json$Decode$succeed(
+			{message: msg, preventDefault: true, stopPropagation: true}));
 };
 var author$project$Main$tileSize = 50;
 var author$project$Main$numberSize = author$project$Main$tileSize / 2;
@@ -6526,32 +6619,52 @@ var rtfeldman$elm_css$Css$textAlign = function (fn) {
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
 var author$project$Main$styleTile = function (tile) {
-	return tile.revealed ? (tile.bomb ? _Utils_ap(
-		author$project$Main$styleTileBase,
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Css$backgroundColor(
-				rtfeldman$elm_css$Css$hex('000000'))
-			])) : _Utils_ap(
-		author$project$Main$styleTileBase,
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Css$backgroundColor(
-				rtfeldman$elm_css$Css$hex('FFFFFF')),
-				rtfeldman$elm_css$Css$textAlign(rtfeldman$elm_css$Css$center),
-				rtfeldman$elm_css$Css$fontSize(
-				rtfeldman$elm_css$Css$px(author$project$Main$numberSize))
-			]))) : _Utils_ap(
-		author$project$Main$styleTileBase,
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Css$backgroundColor(
-				rtfeldman$elm_css$Css$hex('D9D9D9'))
-			]));
+	var _n0 = tile.tileState;
+	switch (_n0.$) {
+		case 'Default':
+			return _Utils_ap(
+				author$project$Main$styleTileBase,
+				_List_fromArray(
+					[
+						rtfeldman$elm_css$Css$backgroundColor(
+						rtfeldman$elm_css$Css$hex('D9D9D9'))
+					]));
+		case 'Flagged':
+			return _Utils_ap(
+				author$project$Main$styleTileBase,
+				_List_fromArray(
+					[
+						rtfeldman$elm_css$Css$backgroundColor(
+						rtfeldman$elm_css$Css$hex('F5BF42'))
+					]));
+		default:
+			return tile.bomb ? _Utils_ap(
+				author$project$Main$styleTileBase,
+				_List_fromArray(
+					[
+						rtfeldman$elm_css$Css$backgroundColor(
+						rtfeldman$elm_css$Css$hex('000000'))
+					])) : _Utils_ap(
+				author$project$Main$styleTileBase,
+				_List_fromArray(
+					[
+						rtfeldman$elm_css$Css$backgroundColor(
+						rtfeldman$elm_css$Css$hex('FFFFFF')),
+						rtfeldman$elm_css$Css$textAlign(rtfeldman$elm_css$Css$center),
+						rtfeldman$elm_css$Css$fontSize(
+						rtfeldman$elm_css$Css$px(author$project$Main$numberSize))
+					]));
+	}
 };
-var author$project$Main$textTile = F3(
-	function (revealed, bomb, n) {
-		return ((!revealed) || (bomb || (!n))) ? '' : elm$core$String$fromInt(n);
+var author$project$Main$textTile = F2(
+	function (grid, tile) {
+		var n = A2(author$project$Main$neighbouringBombsCount, grid, tile);
+		var _n0 = tile.tileState;
+		if (_n0.$ === 'Revealed') {
+			return (!n) ? '' : elm$core$String$fromInt(n);
+		} else {
+			return '';
+		}
 	});
 var rtfeldman$elm_css$VirtualDom$Styled$Node = F3(
 	function (a, b, c) {
@@ -6560,21 +6673,6 @@ var rtfeldman$elm_css$VirtualDom$Styled$Node = F3(
 var rtfeldman$elm_css$VirtualDom$Styled$node = rtfeldman$elm_css$VirtualDom$Styled$Node;
 var rtfeldman$elm_css$Html$Styled$node = rtfeldman$elm_css$VirtualDom$Styled$node;
 var rtfeldman$elm_css$Html$Styled$td = rtfeldman$elm_css$Html$Styled$node('td');
-var elm$json$Json$Decode$map = _Json_map1;
-var elm$json$Json$Decode$map2 = _Json_map2;
-var elm$json$Json$Decode$succeed = _Json_succeed;
-var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
-	switch (handler.$) {
-		case 'Normal':
-			return 0;
-		case 'MayStopPropagation':
-			return 1;
-		case 'MayPreventDefault':
-			return 2;
-		default:
-			return 3;
-	}
-};
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var rtfeldman$elm_css$VirtualDom$Styled$Unstyled = function (a) {
 	return {$: 'Unstyled', a: a};
@@ -6591,10 +6689,6 @@ var elm$virtual_dom$VirtualDom$property = F2(
 			_VirtualDom_property,
 			_VirtualDom_noInnerHtmlOrFormAction(key),
 			_VirtualDom_noJavaScriptOrHtmlUri(value));
-	});
-var rtfeldman$elm_css$VirtualDom$Styled$Attribute = F3(
-	function (a, b, c) {
-		return {$: 'Attribute', a: a, b: b, c: c};
 	});
 var Skinney$murmur3$Murmur3$HashData = F4(
 	function (shift, seed, hash, charsProcessed) {
@@ -8236,15 +8330,6 @@ var rtfeldman$elm_css$Html$Styled$Attributes$css = rtfeldman$elm_css$Html$Styled
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var rtfeldman$elm_css$VirtualDom$Styled$on = F2(
-	function (eventName, handler) {
-		return A3(
-			rtfeldman$elm_css$VirtualDom$Styled$Attribute,
-			A2(elm$virtual_dom$VirtualDom$on, eventName, handler),
-			_List_Nil,
-			'');
-	});
 var rtfeldman$elm_css$Html$Styled$Events$on = F2(
 	function (event, decoder) {
 		return A2(
@@ -8260,7 +8345,6 @@ var rtfeldman$elm_css$Html$Styled$Events$onClick = function (msg) {
 };
 var author$project$Main$viewTile = F2(
 	function (grid, tile) {
-		var n = A2(author$project$Main$neighbouringBombsCount, grid, tile);
 		var coord = A2(
 			elm$core$Maybe$withDefault,
 			_Utils_Tuple2(0, 0),
@@ -8271,13 +8355,15 @@ var author$project$Main$viewTile = F2(
 				[
 					rtfeldman$elm_css$Html$Styled$Events$onClick(
 					author$project$Main$Click(coord)),
+					author$project$Main$onRightClick(
+					author$project$Main$RightClick(coord)),
 					rtfeldman$elm_css$Html$Styled$Attributes$css(
 					author$project$Main$styleTile(tile))
 				]),
 			_List_fromArray(
 				[
 					rtfeldman$elm_css$Html$Styled$text(
-					A3(author$project$Main$textTile, tile.revealed, tile.bomb, n))
+					A2(author$project$Main$textTile, grid, tile))
 				]));
 	});
 var rtfeldman$elm_css$Html$Styled$tr = rtfeldman$elm_css$Html$Styled$node('tr');
