@@ -157,26 +157,28 @@ view model =
     div []
         [ table []
             (List.map (viewTileRow grid) grid)
-        , text (viewGameState model.gameState)
+        , viewGameState model.gameState
         ]
 
 
-viewGameState : GameState -> String
+viewGameState : GameState -> Html Msg
 viewGameState state =
+    div [ css [ fontSize (px (numberSize * 5)) ] ]
+        [ text (viewGameStateText state)
+        ]
+
+
+viewGameStateText : GameState -> String
+viewGameStateText state =
     case state of
         Playing ->
             ""
 
         Won ->
-            repeatRow "🎉"
+            "🎉"
 
         Lost ->
-            repeatRow "💥"
-
-
-repeatRow : String -> String
-repeatRow =
-    List.repeat 50 >> String.concat
+            "💥"
 
 
 viewTileRow : Grid Tile -> List Tile -> Html Msg
